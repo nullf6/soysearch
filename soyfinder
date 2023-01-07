@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+import requests
+import re
+from bs4 import BeautifulSoup
+import sys
+import string
+import random
+from concurrent.futures import ThreadPoolExecutor
+import os
+
+post_url = []
+images = []
+main_url = f"https://booru.soy/post/list/{' '.join(sys.argv[2:])}/{sys.argv[1]}"
+
+def generate_id():
+    return ''.join(random.choices(string.ascii_lowercase+string.digits, k=6))
+
+def get_post_url(url):
+    image_link = []
+    r = requests.get(main_url)
+    if r.status_code == 404:
+        print("Eror: 404.")
+        print("Exiting...")
+        exit(1)
+    soup = BeautifulSoup(r.text, "lxml")
+    links = soup.find_all('a')
+    for link in links:
+        if len(link['href'].split('/')) == 4 and link['href'] != "https://www.shishnet.org/" and '#' not in list(link['href']):
+            post_url.append(f"https://booru.soy{link['href']}")
+def process(url):
+    a = requests.get(url)
+    image_soup = BeautifulSoup(a.text, "lxml")
+    # Get source image
+    image = f"https://booru.soy/{image_soup.find('img', id='main_image')['src']}"
+    if  image != None:
+        r = requests.get(image, timeout=5)
+        wall_name = generate_id()
+        dl_path = f"/home/{os.getlogin()}/soyfinder/.temp/{wall_name}.png"
+        open(dl_path, 'wb').write(r.content)
+
+if __name__ = '__main__':
+    get_post_url(main_url)
+    with ThreadPoolExecutor() as executor:
+        executor.map(process, post_url)
+    os.system("sxiv -t $HOME/soyfinder/.temp/*")
+    os.system("rm $HOME/soyfinder/.temp/*")
