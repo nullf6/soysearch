@@ -39,7 +39,7 @@ def process(url):
         dl_path = f"/home/{os.getlogin()}/soyfinder/.temp/{wall_name}.png"
         open(dl_path, 'wb').write(r.content)
 
-if __name__ = '__main__':
+if __name__ == '__main__':
     get_post_url(main_url)
     with ThreadPoolExecutor() as executor:
         executor.map(process, post_url)
